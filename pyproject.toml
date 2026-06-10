@@ -1,0 +1,7 @@
+[project]
+name = "bithealth-rag-refactor"
+version = "0.1.0"
+description = "Proyecto para refactorizar un mini script de RAG un poco desorganizado."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = []
