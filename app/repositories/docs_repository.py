@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from base_repository import BaseRepository
+from repositories.base_repository import BaseRepository
 
 
 class DocsRepository(BaseRepository):
@@ -10,16 +10,19 @@ class DocsRepository(BaseRepository):
     """
 
     def __init__(self) -> None:
-        self.memory: list[Tuple[int, str]] = []
+        self._memory: list[Tuple[int, str]] = []
+
+    def __len__(self) -> int:
+        return len(self._memory)
 
     def add(self, document: str) -> int:
         id = hash(document)
-        self.memory.append((id, document))
+        self._memory.append((id, document))
         return id
 
     def retrieve(self, query: str) -> list[str]:
         results: list[str] = []
-        for doc_tuple in self.memory:
+        for doc_tuple in self._memory:
             doc_text = doc_tuple[1]
             if query.lower() == doc_text:
                 results.append(doc_text)
@@ -27,7 +30,7 @@ class DocsRepository(BaseRepository):
         if not results:
             # Tomamos el primer elemento como fallback
             # Asi se manejaba en la impl original
-            doc_text = self.memory[0][1]
+            doc_text = self._memory[0][1]
             results.append(doc_text)
 
         return results

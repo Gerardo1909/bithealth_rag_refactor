@@ -1,56 +1,31 @@
-import random
 import time
 
 from fastapi import FastAPI, HTTPException
 from langgraph.graph import END, StateGraph
 from models import DocumentRequest, QuestionRequest
-from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, PointStruct, VectorParams
+from repositories.docs_repository import DocsRepository
+from repositories.qdrant_repository import QdrantRepository
 
 app = FastAPI(title="Learning RAG Demo")
 
-
-# Pretend this is a real embedding model
-def fake_embed(text: str):
-    # Seed based on input so it's "deterministic"
-    random.seed(abs(hash(text)) % 10000)
-    return [random.random() for _ in range(128)]  # Small vector for demo
-
-
-# Super basic in-memory "storage" fallback
-docs_memory = []
-
 # Qdrant setup (assumes local instance)
 try:
-    qdrant = QdrantClient("http://localhost:6333")
-    qdrant.recreate_collection(
-        collection_name="demo_collection",
-        vectors_config=VectorParams(size=128, distance=Distance.COSINE),
-    )
+    qdrant = QdrantRepository(collection_name="demo_collection")
     USING_QDRANT = True
 except Exception as e:
     print("⚠️  Qdrant not available. Falling back to in-memory list.")
+    memory_list = DocsRepository()
     USING_QDRANT = False
 
 
 # LangGraph state = plain dict
 def simple_retrieve(state):
     query = state["question"]
-    results = []
-    emb = fake_embed(query)
 
     if USING_QDRANT:
-        hits = qdrant.search(
-            collection_name="demo_collection", query_vector=emb, limit=2
-        )
-        for hit in hits:
-            results.append(hit.payload["text"])
+        results = qdrant.retrieve(query)
     else:
-        for doc in docs_memory:
-            if query.lower() in doc.lower():
-                results.append(doc)
-        if not results and docs_memory:
-            results = [docs_memory[0]]  # Just grab first
+        results = memory_list.retrieve(query)
 
     state["context"] = results
     return state
@@ -95,17 +70,11 @@ def ask_question(req: QuestionRequest):
 @app.post("/add")
 def add_document(req: DocumentRequest):
     try:
-        emb = fake_embed(req.text)
-        doc_id = len(docs_memory)  # super unsafe ID!
-        payload = {"text": req.text}
-
+        doc_id: int
         if USING_QDRANT:
-            qdrant.upsert(
-                collection_name="demo_collection",
-                points=[PointStruct(id=doc_id, vector=emb, payload=payload)],
-            )
+            doc_id = qdrant.add(req.text)
         else:
-            docs_memory.append(req.text)
+            doc_id = memory_list.add(req.text)
 
         return {"id": doc_id, "status": "added"}
     except Exception as e:
@@ -116,6 +85,6 @@ def add_document(req: DocumentRequest):
 def status():
     return {
         "qdrant_ready": USING_QDRANT,
-        "in_memory_docs_count": len(docs_memory),
+        "in_memory_docs_count": len(memory_list),
         "graph_ready": chain is not None,
     }

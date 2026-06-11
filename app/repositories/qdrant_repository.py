@@ -1,8 +1,8 @@
 import random
 
-from base_repository import BaseRepository
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
+from repositories.base_repository import BaseRepository
 
 
 class QdrantRepository(BaseRepository):
@@ -11,19 +11,22 @@ class QdrantRepository(BaseRepository):
     Qdrant
     """
 
-    def __init__(self) -> None:
-        self.qdrant = QdrantClient("http://localhost:6333")
+    def __init__(
+        self, collection_name: str, port: str = "http://localhost:6333"
+    ) -> None:
+        self.qdrant = QdrantClient(port)
         self.qdrant.recreate_collection(
-            collection_name="demo_collection",
+            collection_name=collection_name,
             vectors_config=VectorParams(size=128, distance=Distance.COSINE),
         )
 
     def add(self, document: str) -> int:
         doc_emb = self._embed(document)
         id = hash(document)
+        doc_payload = {"text": document}
         self.qdrant.upsert(
             collection_name="demo_collection",
-            points=[PointStruct(id=id, vector=doc_emb, payload=document)],
+            points=[PointStruct(id=id, vector=doc_emb, payload=doc_payload)],
         )
         return id
 
