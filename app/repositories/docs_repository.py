@@ -27,10 +27,4 @@ class DocsRepository(BaseRepository):
             if query.lower() == doc_text:
                 results.append(doc_text)
 
-        if not results:
-            # Tomamos el primer elemento como fallback
-            # Asi se manejaba en la impl original
-            doc_text = self._memory[0][1]
-            results.append(doc_text)
-
         return results
