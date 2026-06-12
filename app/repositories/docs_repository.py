@@ -15,6 +15,9 @@ class DocsRepository(BaseRepository):
     def __len__(self) -> int:
         return len(self._memory)
 
+    def __str__(self) -> str:
+        return "Docs"
+
     def add(self, document: str) -> int:
         id = hash(document)
         self._memory.append((id, document))

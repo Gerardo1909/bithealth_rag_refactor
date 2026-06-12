@@ -20,6 +20,9 @@ class QdrantRepository(BaseRepository):
             vectors_config=VectorParams(size=128, distance=Distance.COSINE),
         )
 
+    def __str__(self) -> str:
+        return "Qdrant"
+
     def add(self, document: str) -> int:
         doc_emb = self._embed(document)
         id = hash(document)

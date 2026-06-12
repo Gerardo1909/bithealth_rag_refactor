@@ -8,6 +8,10 @@ class RagService:
     def __init__(self, repository: BaseRepository) -> None:
         self._repository = repository
 
+    @property
+    def repository(self) -> str:
+        return str(self._repository)
+
     def retrieve(self, query: str) -> dict[str, Any]:
         try:
             start = time.time()
