@@ -7,6 +7,12 @@ class BaseRepository(ABC):
     del sistema.
     """
 
+    def __len__(self) -> int:
+        raise NotImplementedError
+
+    def __str__(self) -> str:
+        raise NotImplementedError
+
     def add(self, document: str) -> int:
         raise NotImplementedError
 
