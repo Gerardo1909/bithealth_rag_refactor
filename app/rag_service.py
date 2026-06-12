@@ -12,6 +12,10 @@ class RagService:
     def repository(self) -> str:
         return str(self._repository)
 
+    @property
+    def documents_length(self) -> int:
+        return len(self._repository)
+
     def retrieve(self, query: str) -> dict[str, Any]:
         try:
             start = time.time()

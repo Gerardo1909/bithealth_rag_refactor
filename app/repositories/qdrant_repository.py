@@ -1,4 +1,5 @@
 import random
+import uuid
 
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
@@ -14,8 +15,9 @@ class QdrantRepository(BaseRepository):
     def __init__(
         self, collection_name: str, port: str = "http://localhost:6333"
     ) -> None:
-        self.qdrant = QdrantClient(port)
-        self.qdrant.recreate_collection(
+        self.collection_name = collection_name
+        self.qdrant = QdrantClient(url=port)
+        self.qdrant.create_collection(
             collection_name=collection_name,
             vectors_config=VectorParams(size=128, distance=Distance.COSINE),
         )
@@ -23,12 +25,16 @@ class QdrantRepository(BaseRepository):
     def __str__(self) -> str:
         return "Qdrant"
 
+    def __len__(self) -> int:
+        result = self.qdrant.count(collection_name=self.collection_name, exact=True)
+        return result.count
+
     def add(self, document: str) -> int:
         doc_emb = self._embed(document)
-        id = hash(document)
+        id = uuid.uuid4().int
         doc_payload = {"text": document}
         self.qdrant.upsert(
-            collection_name="demo_collection",
+            collection_name=self.collection_name,
             points=[PointStruct(id=id, vector=doc_emb, payload=doc_payload)],
         )
         return id
@@ -38,7 +44,7 @@ class QdrantRepository(BaseRepository):
         query_emb = self._embed(query)
 
         hits = self.qdrant.search(
-            collection_name="demo_collection", query_vector=query_emb, limit=2
+            collection_name=self.collection_name, query_vector=query_emb, limit=2
         )
         for hit in hits:
             results.append(hit.payload["text"])

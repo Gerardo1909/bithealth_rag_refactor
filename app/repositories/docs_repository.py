@@ -1,3 +1,4 @@
+import uuid
 from typing import Tuple
 
 from repositories.base_repository import BaseRepository
@@ -19,7 +20,7 @@ class DocsRepository(BaseRepository):
         return "Docs"
 
     def add(self, document: str) -> int:
-        id = hash(document)
+        id = uuid.uuid4().int
         self._memory.append((id, document))
         return id
 
